@@ -4,7 +4,7 @@
 #include "headers/readline_settings.h"
 
 #define ARGS_MAX_LENGTH 10
-#define BUF_LENGTH 100
+#define BUF_LENGTH 256
 
 int main(int argc, char** argv)
 {
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
     rl_attempted_completion_function = crud_completion;
 
-    printf("Entered interactive mode\n");
+    printf("Entered interactive mode\nFor help, type help");
 
     while (1) {
         buffer = readline(">> ");
@@ -45,6 +45,16 @@ int main(int argc, char** argv)
                 break;
             }
 
+            if (!strcmp(buffer, "help")) {
+                printf("Command format: op_id msg_type args\nop_id: create/read/delete\n"
+                       "msg_type: coords, args - latitude and longitude\n"
+                       "Create:\n\tcreate coords device_id lat long\n"
+                       "Read:\n\tread | read [ids]\n"
+                       "Delete\n\tdelete [ids]");
+                free(buffer);
+                continue;
+            }
+
             if (!strcmp(buffer, "read")) {
                 json_string = msg_read((const char**) op_args, op_args_cnt);
             }
@@ -52,7 +62,7 @@ int main(int argc, char** argv)
                 json_string = msg_create((const char**) op_args, op_args_cnt);
             }
             else if (!strcmp(buffer, "delete")) {
-                json_string = msg_create((const char**) op_args, op_args_cnt);
+                json_string = msg_delete((const char**) op_args, op_args_cnt);
             }
             else
                 json_string = NULL;
@@ -74,6 +84,8 @@ int main(int argc, char** argv)
             printf("%s", response);
         }
     }
+
+    close(sfd);
 
     exit(EXIT_SUCCESS);
 }

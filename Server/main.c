@@ -8,7 +8,7 @@
 #include <netdb.h>
 
 #define BACKLOG 10
-#define SIZE 100
+#define SIZE 256
 
 void exit_with_error(const char* message) {
     printf("Error: %s", message);
@@ -64,11 +64,9 @@ int main(int argc, char** argv)
     if (conn_fd == -1)
         exit_with_error("could not establish connection");
 
-    while (1) {
-        if (recvfrom(conn_fd, BUF, SIZE, 0, (struct sockaddr*) &peer_addr, &peer_len) > 0) {
-            sendto(conn_fd, "Accepted", SIZE, 0, (const struct sockaddr*) &peer_addr, peer_len);
-            break;
-        }
+    if (recvfrom(conn_fd, BUF, SIZE, 0, (struct sockaddr*) &peer_addr, &peer_len) > 0) {
+        printf("%s", BUF);
+        sendto(conn_fd, "Accepted\n", SIZE, 0, (const struct sockaddr*) &peer_addr, peer_len);
     }
 
     exit(EXIT_SUCCESS);
