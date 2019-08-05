@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "headers/connection.h"
-#include "headers/crud_functions.h"
+#include "headers/json_parsing.h"
 #include "headers/readline_settings.h"
 
 #define ARGS_MAX_LENGTH 10
@@ -41,28 +41,31 @@ int main(int argc, char** argv)
             }
 
             if (!strcmp(buffer, "exit")) {
+                write(sfd, "close", 10);
                 free(buffer);
+                close(sfd);
                 break;
             }
 
             if (!strcmp(buffer, "help")) {
                 printf("Command format: op_id msg_type args\nop_id: create/read/delete\n"
-                       "msg_type: coords, args - latitude and longitude\n"
-                       "Create:\n\tcreate coords device_id lat long\n"
+                       "msg_type: \n\tcoords, args - latitude longitude\n"
+                       "\tperson args - first_name last_name age\n"
+                       "Create:\n\tcreate msg_type device_id args\n"
                        "Read:\n\tread | read [ids]\n"
-                       "Delete\n\tdelete [ids]");
+                       "Delete\n\tdelete [ids]\n");
                 free(buffer);
                 continue;
             }
 
             if (!strcmp(buffer, "read")) {
-                json_string = msg_read((const char**) op_args, op_args_cnt);
+                json_string = msg_read((const char**) op_args + 1, op_args_cnt - 1);
             }
             else if (!strcmp(buffer, "create")) {
-                json_string = msg_create((const char**) op_args, op_args_cnt);
+                json_string = msg_create((const char**) op_args + 1, op_args_cnt - 1);
             }
             else if (!strcmp(buffer, "delete")) {
-                json_string = msg_delete((const char**) op_args, op_args_cnt);
+                json_string = msg_delete((const char**) op_args + 1, op_args_cnt - 1);
             }
             else
                 json_string = NULL;
@@ -81,11 +84,12 @@ int main(int argc, char** argv)
                 printf("Failed to get a response");
             }
 
-            printf("%s", response);
+            printf("%s\n", response);
+            print_json(response, buffer);
+
+            free(buffer);
         }
     }
-
-    close(sfd);
 
     exit(EXIT_SUCCESS);
 }

@@ -3,4 +3,6 @@ project(Server C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Server main.c)
+add_executable(server main.c source/conn_thread.c source/crud_functions.c)
+
+target_link_libraries(server jansson pthread messages)

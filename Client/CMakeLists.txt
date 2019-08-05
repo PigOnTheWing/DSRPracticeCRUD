@@ -3,7 +3,6 @@ project(Client C)
 
 set(CMAKE_C_STANDARD 99)
 
-link_directories(/usr/lib/)
+add_executable(client main.c source/json_parsing.c source/connection.c source/readline_settings.c)
 
-add_executable(Client main.c source/crud_functions.c source/connection.c source/readline_settings.c source/coords_msg.c)
-target_link_libraries(Client readline jansson)
+target_link_libraries(client readline jansson messages)
