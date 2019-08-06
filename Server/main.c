@@ -58,6 +58,8 @@ int get_socket(char *host, char *port) {
 
     freeaddrinfo(addr_list);
 
+    printf("host=%s\nport=%s\n", host, port);
+
     return sock_fd;
 }
 
@@ -89,22 +91,43 @@ int get_pool(const char *filename, FILE **pool, int pool_len) {
 
 int main(int argc, char** argv)
 {
-    int sock_fd, conn_fd, info_size;
+    int sock_fd, conn_fd, info_size, opt;
+    char *host = NULL, *port = NULL;
     socklen_t peer_len;
     struct sockaddr_in peer_addr;
     struct thread_info *info;
     FILE *pool[POOL_SIZE];
 
     if (argc < 4) {
-        printf("Usage: %s filename host port\n", argv[0]);
+        printf("Usage: %s filename [-h host]|[-p port]\n"
+               "filename - name of file that acts as a database\n"
+               "host - ipv4 address\n"
+               "port - number of port to be listening\n", argv[0]);
         exit(EXIT_FAILURE);
+    }
+
+    while ((opt = getopt(argc, argv, "h:p:")) != -1) {
+        switch (opt) {
+        case 'h':
+            host = optarg;
+            break;
+        case 'p':
+            port = optarg;
+            break;
+        default:
+            printf("Usage: %s filename [-h host]|[-p port]\n"
+                   "filename - name of file that acts as a database\n"
+                   "host - ipv4 address\n"
+                   "port - number of port to be listening\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (get_pool(argv[1], pool, POOL_SIZE) == -1) {
         exit_with_error("Could not find/create file");
     }
 
-    sock_fd = get_socket(argv[2], argv[3]);
+    sock_fd = get_socket(host, port);
 
     if (listen(sock_fd, BACKLOG) == -1)
         exit_with_error("could not listen to a port");

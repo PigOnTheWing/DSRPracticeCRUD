@@ -70,18 +70,12 @@ void *main_routine(void *arg) {
     json_t *op, *json_req, *json_resp = json_object(), *read_array;
     json_error_t *json_err = NULL;
 
-    //delete
-    printf("%lu", info->t_id);
-
     f = get_file(f, info->pool, info->pool_len);
 
     while (1) {
         if (recvfrom(info->conn_fd, BUF, SIZE, 0, (struct sockaddr*) info->peer_addr, info->peer_len) > 0) {
             if (!strcmp(BUF, "close"))
                 break;
-
-            //delete
-            printf("%s", BUF);
 
             json_req = json_loads(BUF, 0, json_err);
 

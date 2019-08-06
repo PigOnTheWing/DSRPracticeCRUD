@@ -84,7 +84,6 @@ int main(int argc, char** argv)
                 printf("Failed to get a response\n");
             }
 
-            printf("%s\n", response);
             print_json(response, buffer);
 
             memset(response, 0, BUF_LENGTH);
