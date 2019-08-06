@@ -128,17 +128,17 @@ int print_json(char *json_string, const char * op) {
         read_arr = json_object_get(obj, "messages");
         json_array_foreach(read_arr, index, value) {
             get_message_struct(&msg, value);
-            printf("id=%ld\ndevice_id=%s\ntime=%s\n", msg.message_id, msg.device_id, msg.time);
+            printf("id=%ld\ndevice_id=%s\ntime=%s", msg.message_id, msg.device_id, msg.time);
 
             switch (msg.message_type) {
             case MSG_NAME:
-                printf("first_name=%s\nlast_name=%s\nage=%d",
+                printf("first_name=%s\nlast_name=%s\nage=%d\n\n",
                         msg.msg_payload.p.fname,
                         msg.msg_payload.p.lname,
                         msg.msg_payload.p.age);
                 break;
             case MSG_COORDS:
-                printf("lat=%f\nlon=%f",
+                printf("lat=%f\nlon=%f\n\n",
                         msg.msg_payload.c.lat,
                         msg.msg_payload.c.lon);
             }
@@ -146,10 +146,10 @@ int print_json(char *json_string, const char * op) {
     }
     else if (!strcmp(op, "create")) {
         val = json_object_get(obj, "val");
-        printf("Create successful, id:\n%lld", json_integer_value(val));
+        printf("Create successful, id:\n%lld\n", json_integer_value(val));
     }
     else {
-        printf("Operation successful");
+        printf("Operation successful\n");
     }
 
     return 0;

@@ -141,8 +141,10 @@ void *main_routine(void *arg) {
             sendto(info->conn_fd, json_dumps(json_resp, 0), SIZE, 0,
                     (const struct sockaddr*) info->peer_addr, *info->peer_len);
 
-            rewind(f);
         }
+
+        rewind(f);
+        memset(BUF, 0, SIZE);
     }
 
     ret_file(f, info->pool, info->pool_len);

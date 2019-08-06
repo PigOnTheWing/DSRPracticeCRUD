@@ -31,15 +31,16 @@ long msg_create(json_t *json_msg, FILE *f) {
 
     new_block.m = msg;
     new_block.is_to_be_deleted = false;
-    new_block.is_last = true;
 
     while (!feof(f)) {
-        if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1)
-            return -1;
+        if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1) {
+            if (ferror(f))
+                return -1;
+            continue;
+        }
 
         if (m_block.is_to_be_deleted) {
             fseek(f, -MESSAGE_BLOCK_SIZE, SEEK_CUR);
-            new_block.is_last = m_block.is_last;
             break;
         }
     }
@@ -67,8 +68,11 @@ long msg_read(json_t *ids, json_t *array, FILE *f) {
 
     if (json_equal(all, json_integer(1))) {
         while(!feof(f)) {
-            if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1)
-                return -1;
+            if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1) {
+                if (ferror(f))
+                    return -1;
+                continue;
+            }
 
             if (m_block.is_to_be_deleted)
                 continue;
@@ -90,8 +94,11 @@ long msg_read(json_t *ids, json_t *array, FILE *f) {
             return -1;
 
         while(!feof(f)) {
-            if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1)
-                return -1;
+            if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1){
+                if (ferror(f))
+                    return -1;
+                continue;
+            }
 
             if (m_block.is_to_be_deleted)
                 continue;
@@ -115,9 +122,9 @@ long msg_read(json_t *ids, json_t *array, FILE *f) {
 }
 
 long msg_delete(json_t *ids, FILE *f) {
-    bool delete = true;
+    //bool delete = true;
     size_t index;
-    size_t bool_size = sizeof(bool);
+    //size_t bool_size = sizeof(_Bool);
     struct file_data data;
     struct message_block m_block;
     json_t *value, *id_array = json_object_get(ids, "ids");
@@ -129,23 +136,32 @@ long msg_delete(json_t *ids, FILE *f) {
         return -1;
 
     while (!feof(f)) {
-        if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1)
-            return -1;
+        if (fread(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1){
+            if (ferror(f))
+                return -1;
+            continue;
+        }
 
         if (m_block.is_to_be_deleted)
             continue;
 
         json_array_foreach(id_array, index, value) {
             if (json_equal(value, json_integer(m_block.m.message_id))) {
-                fseek(f, -2*bool_size, SEEK_CUR);
+                fseek(f, -MESSAGE_BLOCK_SIZE, SEEK_CUR);
+                m_block.is_to_be_deleted = true;
 
-                if (fwrite(&delete, bool_size, 1, f) != 1)
+                if (fwrite(&m_block, MESSAGE_BLOCK_SIZE, 1, f) != 1)
                     return -1;
 
-                fseek(f, bool_size, SEEK_CUR);
+                data.count--;
+
                 json_array_remove(id_array, index);
             }
         }
     }
+
+    rewind(f);
+    fwrite(&data, FILE_DATA_SIZE, 1, f);
+
     return 0;
 }

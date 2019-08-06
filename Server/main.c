@@ -127,7 +127,7 @@ int main(int argc, char** argv)
         info->pool = pool;
         info->pool_len = POOL_SIZE;
 
-        if (pthread_create(&info->t_id, NULL, &main_routine, &info)) {
+        if (pthread_create(&info->t_id, NULL, &main_routine, info)) {
             free(info);
             exit(EXIT_FAILURE);
         }

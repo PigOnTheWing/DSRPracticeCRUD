@@ -51,7 +51,7 @@ int get_message_struct(struct message *m, json_t *obj) {
     m->message_id = json_integer_value(j_message_id);
     m->message_type = json_integer_value(j_message_type);
     strcpy(m->device_id, json_string_value(j_device_id));
-    strcpy(m->time, json_string_value(j_device_id));
+    strcpy(m->time, json_string_value(j_time));
 
     switch (m->message_type) {
         case MSG_COORDS:

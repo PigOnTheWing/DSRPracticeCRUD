@@ -4,7 +4,7 @@
 #include "headers/readline_settings.h"
 
 #define ARGS_MAX_LENGTH 10
-#define BUF_LENGTH 256
+#define BUF_LENGTH 1024
 
 int main(int argc, char** argv)
 {
@@ -20,13 +20,13 @@ int main(int argc, char** argv)
     sfd = connect_to_server(argv[1], argv[2]);
 
     if (sfd == -1) {
-        printf("Could not connect to server");
+        printf("Could not connect to server\n");
         exit(EXIT_FAILURE);
     }
 
     rl_attempted_completion_function = crud_completion;
 
-    printf("Entered interactive mode\nFor help, type help");
+    printf("Entered interactive mode\nFor help, type help\n");
 
     while (1) {
         buffer = readline(">> ");
@@ -77,16 +77,17 @@ int main(int argc, char** argv)
             }
 
             if (write(sfd, json_string, strlen(json_string)) == -1) {
-                printf("Failed to send data to server");
+                printf("Failed to send data to server\n");
             }
 
             if (read(sfd, &response, BUF_LENGTH) == -1) {
-                printf("Failed to get a response");
+                printf("Failed to get a response\n");
             }
 
             printf("%s\n", response);
             print_json(response, buffer);
 
+            memset(response, 0, BUF_LENGTH);
             free(buffer);
         }
     }

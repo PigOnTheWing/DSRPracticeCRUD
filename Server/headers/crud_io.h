@@ -12,7 +12,6 @@ struct file_data {
 struct message_block {
   struct message m;
   bool is_to_be_deleted;
-  bool is_last;
 };
 
 #endif //CRUD_CRUD_IO_H
