@@ -42,6 +42,7 @@ int main(int argc, char** argv)
 
     sa.sa_handler = &handler;
     sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGINT);
 
     if (sigaction(SIGINT, &sa, NULL) == -1) {
         printf("Failed to assign signal handler");
