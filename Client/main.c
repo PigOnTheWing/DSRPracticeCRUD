@@ -37,7 +37,7 @@ int main(int argc, char** argv)
         printf("Could not connect to server\n");
         exit(EXIT_FAILURE);
     }
-    
+
     fcntl(sfd, F_SETFL, O_NONBLOCK);
 
     sa.sa_handler = &handler;
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
         printf("Failed to assign signal handler");
         exit(EXIT_FAILURE);
     }
-    
+
     rl_attempted_completion_function = crud_completion;
 
     printf("Entered interactive mode\nFor help, type help\n");
@@ -65,11 +65,13 @@ int main(int argc, char** argv)
             }
 
             if (!strcmp(buffer, "help")) {
-                printf("Command format: op_id msg_type args\nop_id: create/read/delete\n"
+                printf("Command format: op_id msg_type args\nop_id: create/read/update/delete\n"
                        "msg_type: \n\tcoords, args - latitude longitude\n"
                        "\tperson args - first_name last_name age\n"
                        "Create:\n\tcreate msg_type device_id args\n"
                        "Read:\n\tread | read [ids]\n"
+                       "Update:\n\tupdate msg_type msg_id field value [field value ...]"
+                       "\n\tfields:\n\tcoords - lat, lon\n\tperson - fname, lname, age\n"
                        "Delete\n\tdelete [ids]\n");
                 free(buffer);
                 continue;
@@ -106,7 +108,7 @@ int main(int argc, char** argv)
             if (write(sfd, json_string, strlen(json_string)) == -1) {
                 printf("Failed to send data to server\n");
             }
-            
+
             sig_abort = false;
 
             while(read(sfd, &response, BUF_LENGTH) == -1) {

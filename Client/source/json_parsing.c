@@ -139,6 +139,9 @@ char *msg_update(const char** args, int arg_cnt) {
         strcpy(msg.msg_payload.p.lname, "");
 
         for (arg_index = UPDATE_ARGS_START; arg_index < arg_cnt; arg_index += 2) {
+            if (arg_index + 1 == arg_cnt)
+                return NULL;
+
             if (!strcmp(args[arg_index], "age")) {
                 if (!(age = strtol(args[arg_index + 1], NULL, 10)) || errno == ERANGE)
                     return NULL;
@@ -226,7 +229,7 @@ int print_json(char *json_string, const char * op) {
     status = json_object_get(obj, "status");
     if (json_equal(status, json_integer(0))) {
         err = json_object_get(obj, "error");
-        printf("Error: %s\n", json_string_value(err));
+        printf("\nError: %s\n", json_string_value(err));
         return 0;
     }
 

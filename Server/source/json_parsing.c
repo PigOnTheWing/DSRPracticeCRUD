@@ -5,13 +5,17 @@ int parse_request(const char *request, struct request_data *data) {
     json_t *json_req, *op;
     json_req = json_loads(request, 0, NULL);
 
-    if (json_req == NULL)
+    if (json_req == NULL) {
         status = -1;
+        goto error;
+    }
 
     op = json_object_get(json_req, "op_id");
 
-    if (op == NULL)
+    if (op == NULL) {
         status = -1;
+        goto error;
+    }
 
     data->op = json_integer_value(op);
 
@@ -31,6 +35,7 @@ int parse_request(const char *request, struct request_data *data) {
         status = -1;
     }
 
+    error:
     json_decref(json_req);
     return status;
 }
