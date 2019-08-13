@@ -5,22 +5,21 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <fcntl.h>
 #include "crud_functions.h"
+#include "json_parsing.h"
 
 #define SIZE 1024
+#define MESSAGES_MAX_SIZE 20
 
 struct thread_info {
   pthread_t t_id;
   int conn_fd;
   struct sockaddr_in *peer_addr;
   socklen_t *peer_len;
-  FILE **pool;
-  int pool_len;
+  FILE *f;
 };
 
-FILE *get_file(FILE *f, FILE **pool, int pool_len);
-int ret_file(FILE *f, FILE **pool, int pool_len);
-void set_error_resp(json_t *json_resp, const char* message);
 void *main_routine(void *arg);
 
 #endif //SERVER_CONN_THREAD_H

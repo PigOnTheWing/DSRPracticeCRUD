@@ -12,10 +12,10 @@ int get_message_json(json_t *obj, struct message *m) {
     if (!message_id || !message_type || !device_id || !time)
         return -1;
 
-    json_object_set(obj, "message_id", message_id);
-    json_object_set(obj, "message_type", message_type);
-    json_object_set(obj, "device_id", device_id);
-    json_object_set(obj, "time", time);
+    json_object_set_new(obj, "message_id", message_id);
+    json_object_set_new(obj, "message_type", message_type);
+    json_object_set_new(obj, "device_id", device_id);
+    json_object_set_new(obj, "time", time);
 
     switch(m->message_type) {
         case MSG_COORDS:
@@ -30,7 +30,7 @@ int get_message_json(json_t *obj, struct message *m) {
     if (status == -1)
         return -1;
 
-    json_object_set(obj, "payload", payload);
+    json_object_set_new(obj, "payload", payload);
 
     return 0;
 }
@@ -75,8 +75,8 @@ int get_coords_json(json_t *obj, struct coords *c) {
     if (!lat || !lon)
         return -1;
 
-    json_object_set(obj, "lat", lat);
-    json_object_set(obj, "lon", lon);
+    json_object_set_new(obj, "lat", lat);
+    json_object_set_new(obj, "lon", lon);
 
     return 0;
 }
@@ -107,9 +107,9 @@ int get_name_json(json_t *obj, struct person *p) {
     if (!fname || !lname || !age)
         return -1;
 
-    json_object_set(obj, "fname", fname);
-    json_object_set(obj, "lname", lname);
-    json_object_set(obj, "age", age);
+    json_object_set_new(obj, "fname", fname);
+    json_object_set_new(obj, "lname", lname);
+    json_object_set_new(obj, "age", age);
 
     return 0;
 }
@@ -137,5 +137,29 @@ int get_name_struct(struct person *p, json_t *obj) {
     strcpy(p->lname, lname);
     p->age = age;
 
+    return 0;
+}
+
+int update_message(struct message *dest, struct message *source) {
+    switch (source->message_type) {
+    case MSG_NAME:
+        if (source->msg_payload.p.age != -1)
+            dest->msg_payload.p.age = source->msg_payload.p.age;
+
+        if (strcmp(source->msg_payload.p.fname, "") != 0)
+            strcpy(dest->msg_payload.p.fname, source->msg_payload.p.fname);
+
+        if (strcmp(source->msg_payload.p.lname, "") != 0)
+            strcpy(dest->msg_payload.p.lname, source->msg_payload.p.lname);
+        break;
+    case MSG_COORDS:
+        if (source->msg_payload.c.lat != -1)
+            dest->msg_payload.c.lat = source->msg_payload.c.lat;
+
+        if (source->msg_payload.c.lon != -1)
+            dest->msg_payload.c.lon = source->msg_payload.c.lon;
+        break;
+    default:return -1;
+    }
     return 0;
 }

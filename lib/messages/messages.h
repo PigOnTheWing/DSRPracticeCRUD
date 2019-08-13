@@ -43,4 +43,6 @@ int get_coords_struct(struct coords *point, json_t *obj);
 int get_name_json(json_t *obj, struct person *p);
 int get_name_struct(struct person *p, json_t *obj);
 
+int update_message(struct message *dest, struct message *source);
+
 #endif //MESSAGES_H

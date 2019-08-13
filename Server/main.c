@@ -5,9 +5,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "headers/conn_thread.h"
+#include "headers/db_operations.h"
 
 #define BACKLOG 10
-#define POOL_SIZE 10
 
 void exit_with_error(const char* message) {
     printf("Error: %s", message);
@@ -63,32 +63,6 @@ int get_socket(char *host, char *port) {
     return sock_fd;
 }
 
-int get_pool(const char *filename, FILE **pool, int pool_len) {
-    FILE *f;
-    struct file_data data;
-
-    if (access(filename, R_OK|W_OK) == -1) {
-        f = fopen(filename, "wb");
-
-        if (f == NULL)
-            return -1;
-
-        data.count = 0;
-        data.next_id = 1;
-
-        if (fwrite(&data, sizeof(data), 1, f) != 1)
-            return -1;
-
-        fclose(f);
-    }
-
-    for (int i = 0; i < pool_len; i++) {
-        pool[i] = fopen(filename, "r+b");
-    }
-
-    return 0;
-}
-
 int main(int argc, char** argv)
 {
     int sock_fd, conn_fd, info_size, opt;
@@ -96,13 +70,13 @@ int main(int argc, char** argv)
     socklen_t peer_len;
     struct sockaddr_in peer_addr;
     struct thread_info *info;
-    FILE *pool[POOL_SIZE];
+    FILE *f;
 
-    if (argc < 4) {
-        printf("Usage: %s filename [-h host]|[-p port]\n"
-               "filename - name of file that acts as a database\n"
+    if (argc < 2) {
+        printf("Usage: %s [-h host]|[-p port] filename\n"
                "host - ipv4 address\n"
-               "port - number of port to be listening\n", argv[0]);
+               "port - number of port to be listening\n"
+               "filename - name of file that acts as a database\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -115,15 +89,16 @@ int main(int argc, char** argv)
             port = optarg;
             break;
         default:
-            printf("Usage: %s filename [-h host]|[-p port]\n"
-                   "filename - name of file that acts as a database\n"
+            printf("Usage: %s [-h host]|[-p port] filename\n"
                    "host - ipv4 address\n"
-                   "port - number of port to be listening\n", argv[0]);
+                   "port - number of port to be listening\n"
+                   "filename - name of file that acts as a database\n", argv[0]);
             exit(EXIT_FAILURE);
         }
     }
 
-    if (get_pool(argv[1], pool, POOL_SIZE) == -1) {
+    f = get_file(argv[optind]);
+    if (f == NULL) {
         exit_with_error("Could not find/create file");
     }
 
@@ -141,20 +116,16 @@ int main(int argc, char** argv)
             exit_with_error("could not establish connection");
 
 
-        info = NULL;
         info = malloc(info_size);
 
         info->conn_fd = conn_fd;
         info->peer_addr = &peer_addr;
         info ->peer_len = &peer_len;
-        info->pool = pool;
-        info->pool_len = POOL_SIZE;
+        info->f = f;
 
         if (pthread_create(&info->t_id, NULL, &main_routine, info)) {
             free(info);
             exit(EXIT_FAILURE);
         }
     }
-
-    exit(EXIT_SUCCESS);
 }
