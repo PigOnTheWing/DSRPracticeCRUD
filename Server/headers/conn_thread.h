@@ -8,16 +8,25 @@
 #include <fcntl.h>
 #include "crud_functions.h"
 #include "json_parsing.h"
+#include "db_operations.h"
 
 #define SIZE 1024
 #define MESSAGES_MAX_SIZE 20
 
 struct thread_info {
   pthread_t t_id;
-  int conn_fd;
-  struct sockaddr_in *peer_addr;
-  socklen_t *peer_len;
-  FILE *f;
+  struct
+  {
+    int conn_fd;
+    struct sockaddr_in* peer_addr;
+    socklen_t* peer_len;
+  } connection;
+  struct
+  {
+    int fd;
+    void **mmap_ptr;
+    int *m_block_count;
+  } db_data;
 };
 
 void *main_routine(void *arg);

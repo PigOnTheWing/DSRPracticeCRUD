@@ -4,15 +4,26 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
+#include <bits/sigaction.h>
 #include "conn_thread.h"
-#include "db_operations.h"
 
 #define BACKLOG 10
 #define exit_with_error(message)\
     printf("Error: %s", message); exit(EXIT_FAILURE)
 
 #define log(message)\
-    printf("file - %s, function - %s, line - %d:\n\t%s\n", __FILE__, __func__, __LINE__, message)
+    printf("Main:\n\tfunction - %s, line - %d:\n\t%s\n", __func__, __LINE__, message)
+
+void *mmap_ptr;
+int db_fd;
+
+void handler(int sig_num) {
+    if (shrink_file(db_fd, &mmap_ptr) == -1) {
+        exit_with_error("failed to shrink a file");
+    }
+    exit(EXIT_SUCCESS);
+}
 
 int get_socket(char *host, char *port) {
     int sock_fd = -1, status, reuse_enable = 1;
@@ -71,12 +82,12 @@ int get_socket(char *host, char *port) {
 
 int main(int argc, char** argv)
 {
-    int sock_fd, conn_fd, info_size, opt;
+    int sock_fd, conn_fd, info_size, opt, m_block_count;
     char *host = NULL, *port = NULL;
     socklen_t peer_len;
     struct sockaddr_in peer_addr;
     struct thread_info *info;
-    FILE *f;
+    struct sigaction sa;
 
     if (argc < 2) {
         printf("Usage: %s [-h host]|[-p port] filename\n"
@@ -103,9 +114,22 @@ int main(int argc, char** argv)
         }
     }
 
-    f = get_file(argv[optind]);
-    if (f == NULL) {
+    sa.sa_handler = &handler;
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGINT);
+
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        exit_with_error("failed to assign signal handler");
+    }
+
+    db_fd = get_file(argv[optind]);
+    if (db_fd == -1) {
         exit_with_error("Could not find/create file");
+    }
+
+    m_block_count = get_mapping(db_fd, &mmap_ptr);
+    if (m_block_count == -1) {
+        exit_with_error("could not map a file");
     }
 
     sock_fd = get_socket(host, port);
@@ -117,6 +141,8 @@ int main(int argc, char** argv)
     peer_len = sizeof(struct sockaddr_in);
     info_size = sizeof(struct thread_info);
 
+    printf("Server working. Exit with Ctrl+C");
+
     while (1) {
         conn_fd = accept(sock_fd, (struct sockaddr*) &peer_addr, &peer_len);
         if (conn_fd == -1) {
@@ -126,10 +152,12 @@ int main(int argc, char** argv)
 
 
         info = malloc(info_size);
-        info->conn_fd = conn_fd;
-        info->peer_addr = &peer_addr;
-        info ->peer_len = &peer_len;
-        info->f = f;
+        info->connection.conn_fd = conn_fd;
+        info->connection.peer_addr = &peer_addr;
+        info ->connection.peer_len = &peer_len;
+        info->db_data.fd = db_fd;
+        info->db_data.mmap_ptr = &mmap_ptr;
+        info->db_data.m_block_count = &m_block_count;
 
         if (pthread_create(&info->t_id, NULL, &main_routine, info)) {
             free(info);

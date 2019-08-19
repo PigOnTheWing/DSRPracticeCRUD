@@ -47,6 +47,8 @@ int parse_request_read_delete(json_t *obj, long *ids, size_t ids_max_size, int *
     size_t index, id_count;
     json_t *id_array, *val;
 
+    *all = 0;
+
     id_array = json_object_get(obj, "ids");
 
     if (id_array == NULL) {

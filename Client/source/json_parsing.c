@@ -79,7 +79,7 @@ char *msg_read(const char** args, int arg_cnt) {
         goto done;
     }
 
-    for (ids_index = 0; ids_index < arg_cnt; ids_index++) {
+    for (ids_index = READ_ARGS_START; ids_index < arg_cnt; ids_index++) {
         if (!(id = strtol(args[ids_index], NULL, 10))) {
             json_decref(obj);
             json_decref(ids);
@@ -204,7 +204,7 @@ char *msg_delete(const char** args, int arg_cnt) {
 
     ids = json_array();
 
-    for (ids_index = FIND_ARGS_START; ids_index < arg_cnt; ids_index++) {
+    for (ids_index = DELETE_ARGS_START; ids_index < arg_cnt; ids_index++) {
         if (!(id = strtol(args[ids_index], NULL, 10))) {
             json_decref(obj);
             json_decref(ids);

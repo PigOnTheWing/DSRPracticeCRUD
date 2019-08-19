@@ -1,3 +1,4 @@
+#include <conn_thread.h>
 #include "conn_thread.h"
 
 #define log(t_id, op, status)\
@@ -6,25 +7,25 @@
 pthread_mutex_t op_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *main_routine(void *arg) {
-    int status;
+    int status, m_block_count;
     size_t read_cnt, find_cnt;
     long ids[MESSAGES_MAX_SIZE], id;
-    FILE *f;
+    void *mmap_ptr;
     char BUF[SIZE], *response = NULL;
     struct thread_info *info = arg;
     struct request_data data, abort_data;
     struct message messages[MESSAGES_MAX_SIZE];
 
-    fcntl(info->conn_fd, F_SETFL, O_NONBLOCK);
+    fcntl(info->connection.conn_fd, F_SETFL, O_NONBLOCK);
 
-    f = info->f;
+    mmap_ptr = *info->db_data.mmap_ptr;
 
     data.ids = ids;
     data.ids_max_size = MESSAGES_MAX_SIZE;
     data.all = 0;
 
     while (1) {
-        if (recvfrom(info->conn_fd, BUF, SIZE, 0, (struct sockaddr*) info->peer_addr, info->peer_len) > 0) {
+        if (recvfrom(info->connection.conn_fd, BUF, SIZE, 0, (struct sockaddr*) info->connection.peer_addr, info->connection.peer_len) > 0) {
             if (parse_request(BUF, &data) == -1) {
                 response = get_error_response("Failed to read json request");
                 goto send;
@@ -37,7 +38,7 @@ void *main_routine(void *arg) {
             while (pthread_mutex_trylock(&op_mutex) != 0) {
                 memset(BUF, 0, SIZE);
 
-                if (recvfrom(info->conn_fd, BUF, SIZE, 0, (struct sockaddr*) info->peer_addr, info->peer_len) > 0) {
+                if (recvfrom(info->connection.conn_fd, BUF, SIZE, 0, (struct sockaddr*) info->connection.peer_addr, info->connection.peer_len) > 0) {
                     parse_request(BUF, &abort_data);
                     if (abort_data.op == OP_ABORT) {
                         response = get_error_response("Aborted");
@@ -49,13 +50,20 @@ void *main_routine(void *arg) {
 
             switch (data.op) {
             case OP_CREATE:
-                rewind(f);
-
-                id = msg_create(&data.m, f);
+                id = msg_create(&data.m, mmap_ptr, *info->db_data.m_block_count);
 
                 pthread_mutex_unlock(&op_mutex);
 
                 if (id == -1) {
+                    if (errno == DB_OVERFLOW) {
+                        status = resize_file(info->db_data.fd, info->db_data.mmap_ptr, info->db_data.m_block_count);
+                        if (status == -1) {
+                            response = get_error_response("Create is unavailable");
+                            log(info->t_id, "create", "db overflow");
+                            goto send;
+                        }
+                    }
+
                     response = get_error_response("Failed to create a message");
                     log(info->t_id, "create", "failure");
                     goto send;
@@ -64,9 +72,7 @@ void *main_routine(void *arg) {
                 log(info->t_id, "create", "success");
                 break;
             case OP_READ:
-                rewind(f);
-
-                read_cnt = msg_read(data.ids, data.ids_actual_size, data.all, messages, f);
+                read_cnt = msg_read(data.ids, data.ids_actual_size, data.all, messages, mmap_ptr);
 
                 pthread_mutex_unlock(&op_mutex);
 
@@ -79,9 +85,7 @@ void *main_routine(void *arg) {
                 log(info->t_id, "read", "success");
                 break;
             case OP_UPDATE:
-                rewind(f);
-
-                status = msg_update(&data.m, f);
+                status = msg_update(&data.m, mmap_ptr);
 
                 pthread_mutex_unlock(&op_mutex);
 
@@ -94,9 +98,7 @@ void *main_routine(void *arg) {
                 log(info->t_id, "update", "success");
                 break;
             case OP_DELETE:
-                rewind(f);
-
-                status = msg_delete(data.ids, data.ids_actual_size, f);
+                status = msg_delete(data.ids, data.ids_actual_size, mmap_ptr);
 
                 pthread_mutex_unlock(&op_mutex);
 
@@ -109,9 +111,7 @@ void *main_routine(void *arg) {
                 log(info->t_id, "delete", "success");
                 break;
             case OP_FIND:
-                rewind(f);
-
-                find_cnt = msg_find(&data.m, data.comp_cnt, messages, MESSAGES_MAX_SIZE, f);
+                find_cnt = msg_find(&data.m, data.comp_cnt, messages, MESSAGES_MAX_SIZE, mmap_ptr);
 
                 pthread_mutex_unlock(&op_mutex);
 
@@ -127,8 +127,8 @@ void *main_routine(void *arg) {
             }
 
             send:
-            sendto(info->conn_fd, response, SIZE, 0,
-                    (const struct sockaddr*) info->peer_addr, *info->peer_len);
+            sendto(info->connection.conn_fd, response, SIZE, 0,
+                    (const struct sockaddr*) info->connection.peer_addr, *info->connection.peer_len);
 
             free(response);
             memset(BUF, 0, SIZE);
@@ -137,8 +137,8 @@ void *main_routine(void *arg) {
 
     log(info->t_id, "exit", "success");
 
-    info->f = NULL;
-    close(info->conn_fd);
+    info->db_data.mmap_ptr = NULL;
+    close(info->connection.conn_fd);
     free(info);
 
     return NULL;
