@@ -3,9 +3,9 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <bits/sigaction.h>
-#include "headers/connection.h"
-#include "headers/json_parsing.h"
-#include "headers/readline_settings.h"
+#include "connection.h"
+#include "json_parsing.h"
+#include "readline_settings.h"
 
 #define ARGS_MAX_LENGTH 10
 #define BUF_LENGTH 1024
@@ -57,6 +57,8 @@ int main(int argc, char** argv)
         buffer = readline(">> ");
         if (buffer) {
 
+            add_history(buffer);
+
             op_args_cnt = get_op_args(buffer, op_args, ARGS_MAX_LENGTH);
 
             if (op_args_cnt == -1) {
@@ -66,14 +68,15 @@ int main(int argc, char** argv)
             }
 
             if (!strcmp(buffer, "help")) {
-                printf("Command format: op_id msg_type args\nop_id: create/read/update/delete\n"
+                printf("Command format: op_id msg_type args\nop_id: create/read/update/delete/find\n"
                        "msg_type: \n\tcoords, args - latitude longitude\n"
                        "\tperson args - first_name last_name age\n"
                        "Create:\n\tcreate msg_type device_id args\n"
                        "Read:\n\tread | read [ids]\n"
                        "Update:\n\tupdate msg_type msg_id field value [field value ...]"
                        "\n\tfields:\n\tcoords - lat, lon\n\tperson - fname, lname, age\n"
-                       "Delete\n\tdelete [ids]\n");
+                       "Delete:\n\tdelete [ids]\n"
+                       "Find:\n\tfind msg_type field value [field value ...]");
                 free(buffer);
                 continue;
             }
@@ -90,6 +93,9 @@ int main(int argc, char** argv)
             else if (!strcmp(buffer, "delete")) {
                 json_string = msg_delete((const char**) (op_args + 1), op_args_cnt - 1);
             }
+            else if (!strcmp(buffer, "find")) {
+                json_string = msg_find((const char **) (op_args + 1), op_args_cnt - 1);
+            }
             else if (!strcmp(buffer, "exit")) {
                 json_string = get_op_json(OP_CLOSE);
                 write(sfd, json_string, strlen(json_string));
@@ -97,8 +103,7 @@ int main(int argc, char** argv)
                 close(sfd);
                 break;
             }
-            else
-                json_string = NULL;
+            else json_string = NULL;
 
             if (json_string == NULL) {
                 printf("Wrong format\n");

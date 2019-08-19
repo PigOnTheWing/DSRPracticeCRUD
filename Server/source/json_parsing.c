@@ -1,4 +1,4 @@
-#include "../headers/json_parsing.h"
+#include "json_parsing.h"
 
 int parse_request(const char *request, struct request_data *data) {
     int status = 0;
@@ -28,6 +28,9 @@ int parse_request(const char *request, struct request_data *data) {
     case OP_UPDATE:
         status = get_message_struct(&data->m, json_req);
         break;
+    case OP_FIND:
+        status = parse_find(json_req, &data->m, &data->comp_cnt);
+        break;
     case OP_CLOSE:
     case OP_ABORT:
         break;
@@ -46,13 +49,15 @@ int parse_request_read_delete(json_t *obj, long *ids, size_t ids_max_size, int *
 
     id_array = json_object_get(obj, "ids");
 
-    if (id_array == NULL)
+    if (id_array == NULL) {
         return -1;
+    }
 
     id_count = json_array_size(id_array);
 
-    if (id_count > ids_max_size)
+    if (id_count > ids_max_size) {
         id_count = ids_max_size;
+    }
 
     if (id_count == 0) {
         id_count = ids_max_size;
@@ -60,13 +65,33 @@ int parse_request_read_delete(json_t *obj, long *ids, size_t ids_max_size, int *
     }
 
     json_array_foreach(id_array, index, val) {
-        if (index == id_count)
+        if (index == id_count) {
             break;
+        }
 
         ids[index] = json_integer_value(val);
     }
 
     return id_count;
+}
+
+int parse_find(json_t *obj, struct message *msg, int *comp_cnt) {
+    int status;
+    json_t *c_cnt;
+
+    status = get_message_struct(msg, obj);
+    if (status == -1) {
+        return -1;
+    }
+
+    c_cnt = json_object_get(obj, "c_cnt");
+    if (c_cnt == NULL) {
+        return -1;
+    }
+
+    *comp_cnt = json_integer_value(c_cnt);
+
+    return 0;
 }
 
 char *get_error_response(const char* error) {
@@ -128,4 +153,8 @@ char *get_successful_update() {
 }
 char *get_successful_delete() {
     return get_successful_update();
+}
+
+char *get_successful_find(struct message *messages, size_t msg_size) {
+    return get_successful_read(messages, msg_size);
 }

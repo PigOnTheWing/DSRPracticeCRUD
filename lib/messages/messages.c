@@ -9,8 +9,9 @@ int get_message_json(json_t *obj, struct message *m) {
     device_id = json_string(m->device_id);
     time = json_string(m->time);
 
-    if (!message_id || !message_type || !device_id || !time)
+    if (!message_id || !message_type || !device_id || !time) {
         return -1;
+    }
 
     json_object_set_new(obj, "message_id", message_id);
     json_object_set_new(obj, "message_type", message_type);
@@ -27,8 +28,9 @@ int get_message_json(json_t *obj, struct message *m) {
         default:return -1;
     }
 
-    if (status == -1)
+    if (status == -1) {
         return -1;
+    }
 
     json_object_set_new(obj, "payload", payload);
 
@@ -45,8 +47,9 @@ int get_message_struct(struct message *m, json_t *obj) {
     j_time = json_object_get(obj, "time");
     j_payload = json_object_get(obj, "payload");
 
-    if (!j_message_id || !j_message_type || !j_device_id || !j_time || !j_payload)
+    if (!j_message_id || !j_message_type || !j_device_id || !j_time || !j_payload) {
         return -1;
+    }
 
     m->message_id = json_integer_value(j_message_id);
     m->message_type = json_integer_value(j_message_type);
@@ -72,8 +75,9 @@ int get_coords_json(json_t *obj, struct coords *c) {
     lat = json_real(c->lat);
     lon = json_real(c->lon);
 
-    if (!lat || !lon)
+    if (!lat || !lon) {
         return -1;
+    }
 
     json_object_set_new(obj, "lat", lat);
     json_object_set_new(obj, "lon", lon);
@@ -104,8 +108,9 @@ int get_name_json(json_t *obj, struct person *p) {
     lname = json_string(p->lname);
     age = json_integer(p->age);
 
-    if (!fname || !lname || !age)
+    if (!fname || !lname || !age) {
         return -1;
+    }
 
     json_object_set_new(obj, "fname", fname);
     json_object_set_new(obj, "lname", lname);
@@ -123,15 +128,17 @@ int get_name_struct(struct person *p, json_t *obj) {
     j_lname = json_object_get(obj, "lname");
     j_age = json_object_get(obj, "age");
 
-    if (!j_fname || !j_lname || !j_age)
+    if (!j_fname || !j_lname || !j_age) {
         return -1;
+    }
 
     fname = json_string_value(j_fname);
     lname = json_string_value(j_lname);
     age = json_integer_value(j_age);
 
-    if (!fname || !lname || !age)
+    if (!fname || !lname || !age) {
         return -1;
+    }
 
     strcpy(p->fname, fname);
     strcpy(p->lname, lname);
@@ -141,25 +148,79 @@ int get_name_struct(struct person *p, json_t *obj) {
 }
 
 int update_message(struct message *dest, struct message *source) {
+    if (dest->message_type != source->message_type) {
+        return -1;
+    }
+
     switch (source->message_type) {
     case MSG_NAME:
-        if (source->msg_payload.p.age != -1)
+        if (source->msg_payload.p.age != -1) {
             dest->msg_payload.p.age = source->msg_payload.p.age;
+        }
 
-        if (strcmp(source->msg_payload.p.fname, "") != 0)
+        if (strcmp(source->msg_payload.p.fname, "") != 0) {
             strcpy(dest->msg_payload.p.fname, source->msg_payload.p.fname);
+        }
 
-        if (strcmp(source->msg_payload.p.lname, "") != 0)
+        if (strcmp(source->msg_payload.p.lname, "") != 0) {
             strcpy(dest->msg_payload.p.lname, source->msg_payload.p.lname);
+        }
         break;
     case MSG_COORDS:
-        if (source->msg_payload.c.lat != -1)
+        if (source->msg_payload.c.lat != -1) {
             dest->msg_payload.c.lat = source->msg_payload.c.lat;
+        }
 
-        if (source->msg_payload.c.lon != -1)
+        if (source->msg_payload.c.lon != -1) {
             dest->msg_payload.c.lon = source->msg_payload.c.lon;
+        }
         break;
     default:return -1;
     }
+    return 0;
+}
+
+int compare_messages(struct message *m1, struct message *m2, int comp_cnt) {
+    int comparisons = 0;
+
+    if (m1->message_type != m2->message_type) {
+        return -1;
+    }
+
+    if (m1->message_id != -1 && m1->message_id == m2->message_id) {
+        comparisons++;
+    }
+
+    if (strcmp(m1->device_id, "") != 0 && !strcmp(m1->device_id, m2->device_id)) {
+        comparisons++;
+    }
+
+    switch (m1->message_type) {
+    case MSG_COORDS:
+        if (m1->msg_payload.c.lon != -1 && m1->msg_payload.c.lon == m2->msg_payload.c.lon) {
+            comparisons++;
+        }
+        if (m1->msg_payload.c.lat != -1 && m1->msg_payload.c.lat == m2->msg_payload.c.lat) {
+            comparisons++;
+        }
+        break;
+    case MSG_NAME:
+        if (strcmp(m1->msg_payload.p.fname, "") != 0 && !strcmp(m1->msg_payload.p.fname, m2->msg_payload.p.fname)) {
+            comparisons++;
+        }
+        if (strcmp(m1->msg_payload.p.lname, "") != 0 && !strcmp(m1->msg_payload.p.lname, m2->msg_payload.p.lname)) {
+            comparisons++;
+        }
+        if (m1->msg_payload.p.age != -1 && m1->msg_payload.p.age == m2->msg_payload.p.age) {
+            comparisons++;
+        }
+        break;
+    default:return -1;
+    }
+
+    if (comparisons != comp_cnt) {
+        return -1;
+    }
+
     return 0;
 }

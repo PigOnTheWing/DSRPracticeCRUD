@@ -4,27 +4,28 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include "headers/conn_thread.h"
-#include "headers/db_operations.h"
+#include "conn_thread.h"
+#include "db_operations.h"
 
 #define BACKLOG 10
+#define exit_with_error(message)\
+    printf("Error: %s", message); exit(EXIT_FAILURE)
 
-void exit_with_error(const char* message) {
-    printf("Error: %s", message);
-    exit(EXIT_FAILURE);
-}
+#define log(message)\
+    printf("file - %s, function - %s, line - %d:\n\t%s\n", __FILE__, __func__, __LINE__, message)
 
 int get_socket(char *host, char *port) {
     int sock_fd = -1, status, reuse_enable = 1;
     struct addrinfo hints;
     struct addrinfo *addr_list, *ai;
 
-    if (host == NULL)
+    if (host == NULL) {
         host = "localhost";
+    }
 
-    if (port == NULL)
+    if (port == NULL) {
         port = "8080";
-
+    }
 
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -35,26 +36,31 @@ int get_socket(char *host, char *port) {
     hints.ai_next = NULL;
 
     status = getaddrinfo(host, port, &hints, &addr_list);
-    if (status)
+    if (status) {
         exit_with_error("could not get a socket");
+    }
 
     for (ai = addr_list; ai != NULL; ai = ai->ai_next) {
         sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 
-        if (sock_fd == -1)
+        if (sock_fd == -1) {
             continue;
+        }
 
-        if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_enable, sizeof(int)) == -1)
+        if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_enable, sizeof(int)) == -1) {
             exit_with_error("failed to set SO_REUSEADDR");
+        }
 
-        if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) == 0)
+        if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) == 0) {
             break;
+        }
 
         close(sock_fd);
     }
 
-    if (ai == NULL)
+    if (ai == NULL) {
         exit_with_error("bind failed");
+    }
 
     freeaddrinfo(addr_list);
 
@@ -104,20 +110,22 @@ int main(int argc, char** argv)
 
     sock_fd = get_socket(host, port);
 
-    if (listen(sock_fd, BACKLOG) == -1)
+    if (listen(sock_fd, BACKLOG) == -1) {
         exit_with_error("could not listen to a port");
+    }
 
     peer_len = sizeof(struct sockaddr_in);
     info_size = sizeof(struct thread_info);
 
     while (1) {
         conn_fd = accept(sock_fd, (struct sockaddr*) &peer_addr, &peer_len);
-        if (conn_fd == -1)
+        if (conn_fd == -1) {
             exit_with_error("could not establish connection");
+        }
+        log("connection established");
 
 
         info = malloc(info_size);
-
         info->conn_fd = conn_fd;
         info->peer_addr = &peer_addr;
         info ->peer_len = &peer_len;
@@ -125,7 +133,8 @@ int main(int argc, char** argv)
 
         if (pthread_create(&info->t_id, NULL, &main_routine, info)) {
             free(info);
-            exit(EXIT_FAILURE);
+            exit_with_error("failed to create a new thread");
         }
+        log("created new thread");
     }
 }

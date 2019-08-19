@@ -4,7 +4,7 @@ project(CRUD VERSION 0.1.0 LANGUAGES C)
 set(CMAKE_C_STANDART 99)
 
 link_directories(/usr/lib/)
-include_directories(lib/messages/)
+include_directories(lib/include/)
 
 add_subdirectory(lib/messages/ messages/)
 add_subdirectory(Server/ Server/)

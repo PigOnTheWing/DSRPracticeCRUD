@@ -5,7 +5,8 @@
 #define OP_READ 2
 #define OP_UPDATE 3
 #define OP_DELETE 4
-#define OP_CLOSE 5
+#define OP_FIND 5
 #define OP_ABORT 6
+#define OP_CLOSE 7
 
 #endif //CRUD_OPERATIONS_H

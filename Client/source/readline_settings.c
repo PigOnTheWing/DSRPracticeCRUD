@@ -1,10 +1,11 @@
-#include "../headers/readline_settings.h"
+#include "readline_settings.h"
 
 char *commands[] = {
         "create",
         "read",
         "update",
         "delete",
+        "find",
         "help",
         "exit",
         NULL
@@ -36,8 +37,9 @@ char *crud_generator(const char *text, int state) {
 int get_op_args(char *buf, char **container, int max_args) {
     int cont_index = 0;
     char *arg = strtok(buf, " ");
-    if (arg == NULL)
+    if (arg == NULL) {
         return 0;
+    }
 
     do {
         container[cont_index++] = arg;
@@ -45,8 +47,8 @@ int get_op_args(char *buf, char **container, int max_args) {
     }
     while (cont_index < max_args && arg != NULL);
 
-    if (arg == NULL)
+    if (arg == NULL) {
         return cont_index;
-    else
-        return -1;
+    }
+    else return -1;
 }

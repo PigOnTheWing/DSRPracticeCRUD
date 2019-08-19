@@ -44,5 +44,6 @@ int get_name_json(json_t *obj, struct person *p);
 int get_name_struct(struct person *p, json_t *obj);
 
 int update_message(struct message *dest, struct message *source);
+int compare_messages(struct message *m1, struct message *m2, int comp_cnt);
 
 #endif //MESSAGES_H

@@ -1,4 +1,4 @@
-#include "../headers/connection.h"
+#include "connection.h"
 
 int connect_to_server(const char *host, const char *port) {
     int sock_fd, status;
@@ -21,11 +21,13 @@ int connect_to_server(const char *host, const char *port) {
     for (ai = addr_list; ai != NULL; ai = ai->ai_next) {
         sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 
-        if (sock_fd == -1)
+        if (sock_fd == -1) {
             continue;
+        }
 
-        if (!connect(sock_fd, ai->ai_addr, ai->ai_addrlen))
+        if (!connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) {
             break;
+        }
 
         close(sock_fd);
     }

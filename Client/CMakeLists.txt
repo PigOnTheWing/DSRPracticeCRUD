@@ -5,4 +5,5 @@ set(CMAKE_C_STANDARD 99)
 
 add_executable(client main.c source/json_parsing.c source/connection.c source/readline_settings.c)
 
+target_include_directories(client PUBLIC headers)
 target_link_libraries(client readline jansson messages)
