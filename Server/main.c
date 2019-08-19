@@ -12,7 +12,7 @@
     printf("Error: %s", message); exit(EXIT_FAILURE)
 
 #define log(message)\
-    printf("file - %s, function - %s, line - %d:\n\t%s\n", __FILE__, __func__, __LINE__, message)
+    printf("Main:\n\tfunction - %s, line - %d:\n\t%s\n", __func__, __LINE__, message)
 
 int get_socket(char *host, char *port) {
     int sock_fd = -1, status, reuse_enable = 1;
