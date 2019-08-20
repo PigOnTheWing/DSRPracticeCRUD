@@ -76,7 +76,7 @@ int main(int argc, char** argv)
                        "Update:\n\tupdate msg_type msg_id field value [field value ...]"
                        "\n\tfields:\n\tcoords - lat, lon\n\tperson - fname, lname, age\n"
                        "Delete:\n\tdelete [ids]\n"
-                       "Find:\n\tfind msg_type field value [field value ...]");
+                       "Find:\n\tfind msg_type field value [field value ...]\n");
                 free(buffer);
                 continue;
             }

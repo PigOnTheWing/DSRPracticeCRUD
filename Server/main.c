@@ -141,7 +141,7 @@ int main(int argc, char** argv)
     peer_len = sizeof(struct sockaddr_in);
     info_size = sizeof(struct thread_info);
 
-    printf("Server working. Exit with Ctrl+C");
+    printf("Server working. Exit with Ctrl+C\n");
 
     while (1) {
         conn_fd = accept(sock_fd, (struct sockaddr*) &peer_addr, &peer_len);
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 
         if (pthread_create(&info->t_id, NULL, &main_routine, info)) {
             free(info);
-            exit_with_error("failed to create a new thread");
+            exit_with_error("failed to create a new thread\n");
         }
         log("created new thread");
     }
