@@ -7,7 +7,7 @@
 #include <sys/mman.h>
 #include "crud_io.h"
 
-#define NUM_OF_MESSAGES 1
+#define NUM_OF_MESSAGES 10
 
 int get_file(const char *filename);
 int check_and_update(const char *filename);
